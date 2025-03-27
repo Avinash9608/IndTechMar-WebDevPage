@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import insales from "../../assets/images/insales.svg";
 import userExperience from "../../assets/images/user_experence.svg";
@@ -9,8 +9,10 @@ import customerService from "../../assets/images/Customer_Service.svg";
 import leftArrow from "../../assets/images/left.png";
 import rightArrow from "../../assets/images/right.png";
 import discussImage from "../../assets/images/Discussimg.svg";
+import axios from "axios";
 
-const data = [
+// Static data for the carousel (same as original)
+const carouselData = [
   {
     image: insales,
     title: "Increase Sales",
@@ -51,18 +53,85 @@ const data = [
 
 const WebDevelopmentSection = () => {
   const [startIndex, setStartIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [services, setServices] = useState([]);
+  const [mainContent, setMainContent] = useState({
+    title: "Why Choose IND Tech Mark for Web Development Services?",
+    description:
+      "With a proven track record in the field, we deliver highly productive web development solutions that help businesses achieve their goals quickly. Are you eager to know how we can contribute to your business? Check it out below!",
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [direction, setDirection] = useState(1); // 1 for next, -1 for prev
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // First try to fetch services
+        try {
+          const servicesRes = await axios.get(
+            "http://localhost:5000/api/web-dev-services"
+          );
+          setServices(servicesRes.data);
+        } catch (servicesError) {
+          console.error("Error fetching services:", servicesError);
+          setError("Failed to load services. Using default content.");
+        }
+
+        // Then try to fetch main content
+        try {
+          const mainContentRes = await axios.get(
+            "http://localhost:5000/api/web-dev-main-content"
+          );
+          if (mainContentRes.data) {
+            setMainContent(mainContentRes.data);
+          }
+        } catch (mainContentError) {
+          console.error("Error fetching main content:", mainContentError);
+          // Use default main content values
+          setMainContent({
+            title: "Why Choose IND Tech Mark for Web Development Services?",
+            description:
+              "With a proven track record in the field, we deliver highly productive web development solutions that help businesses achieve their goals quickly. Are you eager to know how we can contribute to your business? Check it out below!",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("Failed to load data. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const nextSlide = () => {
     setDirection(1);
-    setStartIndex((prev) => (prev + 1 < data.length - 2 ? prev + 1 : 0)); // Looping effect
+    setStartIndex((prev) =>
+      prev + 1 < carouselData.length - 2 ? prev + 1 : 0
+    );
   };
 
   const prevSlide = () => {
     setDirection(-1);
-    setStartIndex((prev) => (prev - 1 >= 0 ? prev - 1 : data.length - 3)); // Looping effect
+    setStartIndex((prev) =>
+      prev - 1 >= 0 ? prev - 1 : carouselData.length - 3
+    );
   };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="alert alert-danger m-4">{error}</div>;
+  }
 
   return (
     <>
@@ -73,7 +142,7 @@ const WebDevelopmentSection = () => {
               <h2>Why Should You Go For Web Development?</h2>
               <p>
                 In this digital age, establishing a strong online presence is
-                essential. Let’s explore why web development services are
+                essential. Let's explore why web development services are
                 crucial for your business.
               </p>
             </div>
@@ -88,21 +157,23 @@ const WebDevelopmentSection = () => {
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 100, damping: 15 }}
               >
-                {data.slice(startIndex, startIndex + 3).map((item, index) => (
-                  <motion.div
-                    key={index}
-                    className="appdevbg padding30 rounded16 text-left mx-2"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <img
-                      className="d-block"
-                      src={item.image}
-                      alt={item.title}
-                    />
-                    <h3 className="fn-24 fw-bold pt-3 pb-2">{item.title}</h3>
-                    <p>{item.description}</p>
-                  </motion.div>
-                ))}
+                {carouselData
+                  .slice(startIndex, startIndex + 3)
+                  .map((item, index) => (
+                    <motion.div
+                      key={index}
+                      className="appdevbg padding30 rounded16 text-left mx-2"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <img
+                        className="d-block"
+                        src={item.image}
+                        alt={item.title}
+                      />
+                      <h3 className="fn-24 fw-bold pt-3 pb-2">{item.title}</h3>
+                      <p>{item.description}</p>
+                    </motion.div>
+                  ))}
               </motion.div>
             </div>
             <div className="btn-wrap mt-4 text-center">
@@ -119,111 +190,35 @@ const WebDevelopmentSection = () => {
 
       <section className="lightgraybg bodypx py-80 mt-5 text-center">
         <div className="container">
-          <h2>Why Choose IND Tech Mark for Web Development Services?</h2>
-          <p>
-            With a proven track record in the field, we deliver highly
-            productive web development solutions that help businesses achieve
-            their goals quickly. Are you eager to know how we can contribute to
-            your business? Check it out below!
-          </p>
+          <h2>{mainContent.title}</h2>
+          <p>{mainContent.description}</p>
         </div>
         <div className="container-fluid mi-container">
-          <div className="row align-items-md-center">
-            {/* Column 1: Innovative Solutions */}
-            <div className="col-md-6 mb-4 mt-2 ps-md-0 pe-md-4">
-              <div className="bg-white padding30 rounded16">
-                <h4 className="fn-24 fw-bold pb-2 d-block text-left">
-                  Innovative Solutions
-                </h4>
-                <p className="text-left">
-                  At IND Tech Mark, we leverage cutting-edge technologies and
-                  creative development approaches to deliver customized web
-                  development solutions that stand out. Our expertise ensures
-                  that your website is not only functional but also innovative
-                  and engaging.
-                </p>
-              </div>
+          {services.length > 0 ? (
+            <div className="row align-items-md-center">
+              {services
+                .sort((a, b) => a.order - b.order)
+                .map((service, index) => (
+                  <div
+                    key={service._id || index}
+                    className={`col-md-6 mb-4 mt-2 ${
+                      index % 2 === 0 ? "ps-md-0 pe-md-4" : "pe-md-0 pe-md-4"
+                    }`}
+                  >
+                    <div className="bg-white padding30 rounded16">
+                      <h4 className="fn-24 fw-bold pb-2 d-block text-left">
+                        {service.title}
+                      </h4>
+                      <p className="text-left">{service.description}</p>
+                    </div>
+                  </div>
+                ))}
             </div>
-
-            {/* Column 2: Customized Offerings */}
-            <div className="col-md-6 mb-4 mt-2 pe-md-0 pe-md-4">
-              <div className="bg-white padding30 rounded16">
-                <h4 className="fn-24 fw-bold pb-2 d-block text-left">
-                  Customized Offerings
-                </h4>
-                <p className="text-left">
-                  We understand that every business is unique. Thus, we provide
-                  tailored web development solutions tailored to your specific
-                  needs, which ensures that every feature and design element of
-                  the website aligns with your business goals and brand
-                  identity.
-                </p>
-              </div>
+          ) : (
+            <div className="alert alert-info">
+              No services available. Please check back later.
             </div>
-
-            {/* Column 3: Experienced Team */}
-            <div className="col-md-6 mb-4 mt-2 ps-md-0 pe-md-4">
-              <div className="bg-white padding30 rounded16">
-                <h4 className="fn-24 fw-bold pb-2 d-block text-left">
-                  Experienced Team
-                </h4>
-                <p className="text-left">
-                  Our team of skilled and knowledgeable developers and designers
-                  brings a wealth of experience and technical knowledge to the
-                  table. With a strong focus on industry best practices and
-                  top-notch standards, we deliver high-quality solutions that
-                  exceed expectations.
-                </p>
-              </div>
-            </div>
-
-            {/* Column 4: User-Centric Design */}
-            <div className="col-md-6 mb-4 mt-2 pe-md-0 pe-md-4">
-              <div className="bg-white padding30 rounded16">
-                <h4 className="fn-24 fw-bold pb-2 d-block text-left">
-                  User-Centric Design
-                </h4>
-                <p className="text-left">
-                  We prioritize user experience in our website development
-                  process, creating intuitive and responsive designs that
-                  enhance overall usability. Our goal is to ensure that our
-                  website provides a seamless, hassle-free, and enjoyable
-                  experience for all users.
-                </p>
-              </div>
-            </div>
-
-            {/* Column 5: Scalability & Flexibility */}
-            <div className="col-md-6 mb-4 mt-2 ps-md-0 pe-md-4">
-              <div className="bg-white padding30 rounded16">
-                <h4 className="fn-24 fw-bold pb-2 d-block text-left">
-                  Scalability & Flexibility
-                </h4>
-                <p className="text-left">
-                  At IND Tech Mark, we work towards building reliable and
-                  scalable solutions that grow with your business. Whether
-                  you're expanding your product offerings or increasing your
-                  user base, our top web development services adapt to your
-                  ever-evolving needs.
-                </p>
-              </div>
-            </div>
-
-            {/* Column 6: End-to-End Support */}
-            <div className="col-md-6 mb-4 mt-2 pe-md-0 pe-md-4">
-              <div className="bg-white padding30 rounded16 ">
-                <h4 className="fn-24 fw-bold pb-2 d-block text-left">
-                  End-to-End Support
-                </h4>
-                <p className="text-left">
-                  We offer ongoing support and maintenance to keep your web
-                  solution up and running at all times. From troubleshooting to
-                  updates, our expert team of developers ensures that your
-                  website remains up-to-date and performs at its best.
-                </p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -233,7 +228,7 @@ const WebDevelopmentSection = () => {
             <div className="row align-items-center">
               <div className="col-md-7 py-5 ps-md-5">
                 <h2 className="fs-50 fw-400">
-                  Let’s Discuss <span className="fw-600">Your Project</span>
+                  Let's Discuss <span className="fw-600">Your Project</span>
                 </h2>
                 <p className="fn-24">
                   Get a free consultation to discuss how we will transform your
